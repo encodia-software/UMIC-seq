@@ -382,8 +382,8 @@ def cluster_sequences(umis, reads, aln_thresh, size_thresh, max_clusters=0, clus
             count += 1
             clus_member_ids = [rec.id for rec, lab in zip(umis, labels) if lab == i]
             clus_members = [reads[seqid] for seqid in clus_member_ids]
-            fname = output_folder + "/cluster_" + str(count) + ".fasta" #FASTA OR FASTQ?
-            SeqIO.write(clus_members, fname, "fasta")
+            fname = output_folder + "/cluster_" + str(count) + ".fastq" #FASTA OR FASTQ?
+            SeqIO.write(clus_members, fname, "fastq")
     print("Cluster files written")
 
 

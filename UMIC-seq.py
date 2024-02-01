@@ -64,6 +64,7 @@ if threads == 0:
 
 
 
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #UMI EXTRACTION
 #Extracts UMI in correct orientation
@@ -126,7 +127,10 @@ if mode == 'UMIextract':
                 #append to UMI to record list
                 if umi_end < len(alnF.target_sequence) and umi_begin > 0: #UMI could be out of bounds
                     umi = alnF.target_sequence[umi_begin:umi_end]
+                    # TODO make this output FASTQ
+                    # record.letter_annotations['phred_quality'] = {} #remove qality
                     record.letter_annotations = {} #remove qality
+
                     record.seq = Seq(umi)
                     umi_list.append(record)
                     success += 1
@@ -141,7 +145,7 @@ if mode == 'UMIextract':
                 #append to UMI to record list
                 if umi_begin > 0 and umi_end < len(alnR.target_sequence): #UMI could be out of bounds
                     umiR = alnR.target_sequence[umi_begin:umi_end]
-                    record.letter_annotations = {} #remove qality
+                    # record.letter_annotations = {} #remove qality
                     record.seq = Seq(umiR).reverse_complement()
                     umi_list.append(record)
                     success += 1
@@ -186,7 +190,10 @@ def simplesim_cluster(umis, thresh, max_clusters=0, save_scores=False, clussize_
     clussize = []
 
     score_lst_lst = []
+
+    print(f"This is using {threads} threads.")
     pool = multiprocessing.Pool(processes=threads)
+    
     #Goes through seq_index and only compares those indices and removes from there!
     while len(seq_index) > 0:
         #Calculate a list of similar umis to the first one left in seq_index 
@@ -340,7 +347,7 @@ if mode == 'clustertest':
 #FULL CLUSTERING
 
 ##Change max_clusters to eg 10 for testing, leave out/set to 0 for production
-def cluster_sequences(umis, reads, aln_thresh, size_thresh, max_clusters=0, clussize_thresh=0, clussize_window=20):
+def cluster_sequences(umis, umi_index, reads, aln_thresh, size_thresh, max_clusters=0, clussize_thresh=0, clussize_window=20):
     print("Beginning clustering...")
     clus_N, cluster_sizes, labels = simplesim_cluster(umis, aln_thresh, max_clusters=max_clusters, clussize_thresh=clussize_thresh, clussize_window=clussize_window) 
 
@@ -383,15 +390,14 @@ def cluster_sequences(umis, reads, aln_thresh, size_thresh, max_clusters=0, clus
             clus_member_ids = [rec.id for rec, lab in zip(umis, labels) if lab == i]
             clus_members = [reads[seqid] for seqid in clus_member_ids]
 
-            print(type(umis))
+            # print(type(umis))
             # print(umis)
 
-            clus_members_umi = []
-            for cur_member in umis:
-                if cur_member.id in clus_member_ids:
-                    clus_members_umi.append(cur_member)
+            clus_members_umi = [umi_index[seqid] for seqid in clus_member_ids]
 
             # print(type(clus_members_umi))
+            # clus_members = [reads[seqid] for seqid in clus_member_ids]
+            # clus_members_umi = []
 
             fname = output_folder + "/cluster_" + str(count) + ".fastq" #FASTA OR FASTQ?        
             fname_umi = output_folder + "/cluster_" + str(count) + ".umi.fasta"
@@ -419,9 +425,10 @@ if mode == 'clusterfull':
     #USE SeqIO.index FOR ALL! Should be decently memory efficient!
     reads = SeqIO.index(input_READSfile, "fastq")
     umis = list(SeqIO.parse(input_UMIfile, "fasta"))
+    umi_index = SeqIO.index(input_UMIfile, "fasta")
 
     #NOW ENDS EARLY IF CLUSSIZE_WINDOW AND THRESH ARE SET!
     #Calculates average clusterisze over the last X clusters and stops clustering if this is below thresh!
-    cluster_sequences(umis, reads, aln_thresh, size_thresh, clussize_thresh=clussize_thresh, clussize_window=clussize_window)
 
+    cluster_sequences(umis, umi_index, reads, aln_thresh, size_thresh, clussize_thresh=clussize_thresh, clussize_window=clussize_window)
 

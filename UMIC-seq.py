@@ -145,7 +145,7 @@ if mode == 'UMIextract':
                 #append to UMI to record list
                 if umi_begin > 0 and umi_end < len(alnR.target_sequence): #UMI could be out of bounds
                     umiR = alnR.target_sequence[umi_begin:umi_end]
-                    # record.letter_annotations = {} #remove qality
+                    record.letter_annotations = {} #remove qality
                     record.seq = Seq(umiR).reverse_complement()
                     umi_list.append(record)
                     success += 1
